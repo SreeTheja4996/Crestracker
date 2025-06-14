@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Task Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        select, textarea, input[type="text"], input[type="datetime-local"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        button {
+            padding: 10px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #218838;
+        }
+        .dashboard {
+            margin-top: 20px;
+        }
+        .task {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .task.delayed {
+            background: #f8d7da;
+        }
+        .task.completed {
+            background: #d4edda;
+        }
+        .hidden {
+            display: none;
+        }
+        #loading, #error {
+            text-align: center;
+            padding: 20px;
+        }
+        #error {
+            color: #dc3545;
+        }
+    </style>
+    <!-- Google API Client Library -->
+    <script src="https://apis.google.com/js/api.js" onerror="handleScriptError('Google API')"></script>
+    <!-- Google Sign-In -->
+    <script src="https://accounts.google.com/gsi/client" onerror="handleScriptError('Google Sign-In')"></script>
+    <!-- JWT Decode -->
+    <script src="https://unpkg.com/jwt-decode@3.1.2/build/jwt-decode.min.js" onerror="handleScriptError('JWT Decode')"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" onerror="handleScriptError('Chart.js')"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Hospital Task Manager</h1>
+        <div id="loading" class="hidden">Loading...</div>
+        <div id="error" class="hidden"></div>
+        <div id="loginSection">
+            <button id="googleSignIn">Sign in with Google</button>
+        </div>
+        <div id="taskSection" class="hidden">
+            <h2>Add Task</h2>
+            <div class="form-group">
+                <label for="assigner">Assigner</label>
+                <select id="assigner">
+                    <option value="">Select Assigner</option>
+                    <option value="Founder1">Founder 1</option>
+                    <option value="Founder2">Founder 2</option>
+                    <option value="UnitHead">Unit Head</option>
+                    <option value="Doctor1">Doctor 1</option>
+                    <option value="MrsNischala">Mrs. Nischala (Operations Manager)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="assignee">Assignee</label>
+                <select id="assignee">
+                    <option value="">Select Assignee</option>
+                    <option value="Doctor1">Doctor 1</option>
+                    <option value="Doctor2">Doctor 2</option>
+                    <option value="Nurse1">Nurse 1</option>
+                    <option value="MrsNischala">Mrs. Nischala</option>
+                    <option value="Staff1">Staff 1</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="description">Task Description</label>
+                <textarea id="description" rows="5" placeholder="Enter task details..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="eta">ETA</label>
+                <input type="datetime-local" id="eta">
+            </div>
+            <div class="form-group">
+                <label for="priority">Priority</label>
+                <select id="priority">
+                    <option value="">Select Priority</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+            <button id="submitTask">Submit Task</button>
+            <h2>Dashboard</h2>
+            <canvas id="taskChart" style="max-height: 300px;"></canvas>
+            <div id="dashboard"></div>
+        </div>
+    </div>
+
+    <script>
+        // Define handleScriptError first to ensure availability
+        function handleScriptError(scriptName) {
+            showError(`Failed to load ${scriptName} script. Please check your network or try again later.`);
+        }
+
+        let userEmail = '';
+        // Replace these placeholders with your actual credentials
+        const SHEET_ID = 'YOUR_SHEET_ID'; // Google Sheet ID
+        const TWILIO_URL = 'YOUR_TWILIO_ENDPOINT'; // Twilio webhook URL
+        const CLIENT_ID = 'YOUR_CLIENT_ID'; // Google OAuth Client ID
+
+        // Show/hide loading indicator
+        function showLoading(show) {
+            const loadingDiv = document.getElementById('loading');
+            if (loadingDiv) {
+                loadingDiv.classList.toggle('hidden', !show);
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.remove('hidden');
+            }
+            console.error(message);
+        }
+
+        // Initialize Google APIs
+        function initGoogleClient() {
+            if (!window.gapi || !window.google?.accounts?.id) {
+                showError('Google API or Sign-In script not loaded. Retrying...');
+                setTimeout(initGoogleClient, 1000);
+                return;
+            }
+            showLoading(true);
+            gapi.load('client:auth2', () => {
+                gapi.client.init({
+                    clientId: CLIENT_ID,
+                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                    scope: 'profile email https://www.googleapis.com/auth/spreadsheets'
+                }).then(() => {
+                    google.accounts.id.initialize({
+                        client_id: CLIENT_ID,
+                        callback: handleCredentialResponse
+                    });
+                    const signInButton = document.getElementById('googleSignIn');
+                    if (signInButton) {
+                        google.accounts.id.renderButton(signInButton, { theme: 'outline', size: 'large' });
+                    } else {
+                        showError('Sign-in button not found.');
+                    }
+                    showLoading(false);
+                    loadTasks();
+                }).catch(error => {
+                    console.error('Google API init failed:', error);
+                    showError('Failed to initialize Google APIs. Ensure CLIENT_ID is correct and authorized.');
+                    showLoading(false);
+                });
+            });
+        }
+
+        // Handle Google Sign-In response
+        function handleCredentialResponse(response) {
+            if (!window.jwt_decode) {
+                showError('JWT decode library not loaded.');
+                return;
+            }
+            try {
+                const profile = jwt_decode(response.credential);
+                userEmail = profile.email;
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('taskSection').classList.remove('hidden');
+            } catch (error) {
+                console.error('JWT decode failed:', error);
+                showError('Failed to process sign-in. Please try again.');
+            }
+        }
+
+        // Add task
+        function addTask() {
+            const assigner = document.getElementById('assigner')?.value;
+            const assignee = document.getElementById('assignee')?.value;
+            const description = document.getElementById('description')?.value;
+            const eta = document.getElementById('eta')?.value;
+            const priority = document.getElementById('priority')?.value;
+
+            if (!assigner || !assignee || !description || !eta || !priority) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            if (new Date(eta) <= new Date()) {
+                alert('ETA must be in the future');
+                return;
+            }
+
+            const task = {
+                id: Date.now().toString(),
+                assigner,
+                assignee,
+                description,
+                eta,
+                priority,
+                status: 'assigned',
+                comments: [],
+                createdAt: new Date().toISOString()
+            };
+
+            showLoading(true);
+            if (!gapi.client.sheets) {
+                showError('Google Sheets API not loaded.');
+                showLoading(false);
+                return;
+            }
+            gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: SHEET_ID,
+                range: 'Sheet1!A1',
+                valueInputOption: 'RAW',
+                resource: {
+                    values: [[task.id, task.assigner, task.assignee, task.description, task.eta, task.priority, task.status, task.createdAt, '']]
+                }
+            }).then(() => {
+                sendWhatsAppNotification(task);
+                loadTasks();
+                document.getElementById('description').value = '';
+                document.getElementById('eta').value = '';
+                document.getElementById('priority').value = '';
+                showLoading(false);
+            }).catch(error => {
+                console.error('Error saving task:', error);
+                showError('Failed to save task. Check SHEET_ID or permissions.');
+                showLoading(false);
+            });
+        }
+
+        // Load tasks from Google Sheets
+        function loadTasks() {
+            if (!gapi.client.sheets) {
+                showError('Google Sheets API not loaded.');
+                return;
+            }
+            showLoading(true);
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: SHEET_ID,
+                range: 'Sheet1!A:I'
+            }).then(response => {
+                const tasks = response.result.values || [];
+                const dashboard = document.getElementById('dashboard');
+                if (!dashboard) {
+                    showError('Dashboard element not found.');
+                    showLoading(false);
+                    return;
+                }
+                dashboard.innerHTML = '';
+                const statusCounts = { assigned: 0, 'in-progress': 0, delayed: 0, completed: 0 };
+
+                tasks.slice(1).forEach((task, index) => {
+                    const [id, assigner, assignee, description, eta, priority, status, createdAt, comments] = task;
+                    if (userEmail === assigner || userEmail === assignee || userEmail === 'admin@example.com') {
+                        statusCounts[status] = (statusCounts[status] || 0) + 1;
+                        const taskDiv = document.createElement('div');
+                        taskDiv.className = `task ${status === 'delayed' ? 'delayed' : status === 'completed' ? 'completed' : ''}`;
+                        taskDiv.innerHTML = `
+                            <p><strong>Task:</strong> ${description}</p>
+                            <p><strong>Assigned by:</strong> ${assigner} | <strong>To:</strong> ${assignee}</p>
+                            <p><strong>ETA:</strong> ${eta} | <strong>Priority:</strong> ${priority}</p>
+                            <p><strong>Status:</strong> ${status}</p>
+                            <p><strong>Comments:</strong> ${comments || 'None'}</p>
+                            <button onclick="updateTaskStatus('${id}', 'in-progress', prompt('Add comment:'))">Mark In Progress</button>
+                            <button onclick="updateTaskStatus('${id}', 'completed', prompt('Add comment:'))">Mark Completed</button>
+                        `;
+                        dashboard.appendChild(taskDiv);
+                    }
+                });
+
+                const canvas = document.getElementById('taskChart');
+                if (!canvas || !window.Chart) {
+                    showError('Chart.js or canvas not loaded.');
+                    showLoading(false);
+                    return;
+                }
+                const ctx = canvas.getContext('2d');
+                // Destroy previous chart instance to prevent memory leaks
+                if (canvas.chart) {
+                    canvas.chart.destroy();
+                }
+                canvas.chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Assigned', 'In Progress', 'Delayed', 'Completed'],
+                        datasets: [{
+                            label: '# of Tasks',
+                            data: [statusCounts.assigned, statusCounts['in-progress'], statusCounts.delayed, statusCounts.completed],
+                            backgroundColor: ['#007bff', '#ffc107', '#dc3545', '#28a745']
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                showLoading(false);
+            }).catch(error => {
+                console.error('Error loading tasks:', error);
+                showError('Failed to load tasks. Check SHEET_ID or permissions.');
+                showLoading(false);
+            });
+        }
+
+        // Send WhatsApp notification
+        function sendWhatsAppNotification(task) {
+            if (!TWILIO_URL.includes('YOUR_TWILIO_ENDPOINT')) {
+                fetch(TWILIO_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: 'whatsapp:+91XXXXXXXXXX', // Replace with assignee's number
+                        from: 'whatsapp:+YOUR_TWILIO_NUMBER',
+                        body: `New task assigned by ${task.assigner}: ${task.description}. ETA: ${task.eta}. Priority: ${task.priority}. View: ${window.location.href}`
+                    })
+                }).catch(error => console.error('WhatsApp notification failed:', error));
+            } else {
+                console.warn('Twilio URL not configured. Skipping WhatsApp notification.');
+            }
+        }
+
+        // Update task status
+        function updateTaskStatus(taskId, newStatus, comment = '') {
+            showLoading(true);
+            if (!gapi.client.sheets) {
+                showError('Google Sheets API not loaded.');
+                showLoading(false);
+                return;
+            }
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: SHEET_ID,
+                range: 'Sheet1!A:I'
+            }).then(response => {
+                const tasks = response.result.values || [];
+                const rowIndex = tasks.findIndex(row => row[0] === taskId) + 1;
+                if (rowIndex > 0) {
+                    const currentComments = tasks[rowIndex - 1][8] || '';
+                    const updatedComments = comment ? `${currentComments}${currentComments ? ';' : ''}${new Date().toISOString()}:${comment}` : currentComments;
+                    gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: SHEET_ID,
+                        range: `Sheet1!G${rowIndex}:I${rowIndex}`,
+                        valueInputOption: 'RAW',
+                        resource: { values: [[newStatus, tasks[rowIndex - 1][7], updatedComments]] }
+                    }).then(() => {
+                        if (newStatus === 'completed') {
+                            sendWhatsAppNotification({ id: taskId, assigner: tasks[rowIndex - 1][1], description: 'Task completed' });
+                        }
+                        loadTasks();
+                        showLoading(false);
+                    }).catch(error => {
+                        console.error('Error updating task:', error);
+                        showError('Failed to update task. Please try again.');
+                        showLoading(false);
+                    });
+                } else {
+                    showError('Task not found.');
+                    showLoading(false);
+                }
+            }).catch(error => {
+                console.error('Error fetching tasks for update:', error);
+                showError('Failed to update task. Please try again.');
+                showLoading(false);
+            });
+        }
+
+        // Check for delayed tasks
+        function checkDelayedTasks() {
+            if (!gapi.client.sheets) return;
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: SHEET_ID,
+                range: 'Sheet1!A:I'
+            }).then(response => {
+                const tasks = response.result.values || [];
+                tasks.slice(1).forEach((task, index) => {
+                    const [id, , , , eta, , status] = task;
+                    if (status !== 'completed' && new Date(eta) < new Date()) {
+                        gapi.client.sheets.spreadsheets.values.update({
+                            spreadsheetId: SHEET_ID,
+                            range: `Sheet1!G${index + 2}`,
+                            valueInputOption: 'RAW',
+                            resource: { values: [['delayed']] }
+                        });
+                    }
+                });
+                loadTasks();
+            }).catch(error => console.error('Error checking delayed tasks:', error));
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            const submitTaskButton = document.getElementById('submitTask');
+            if (submitTaskButton) {
+                submitTaskButton.addEventListener('click', addTask);
+            } else {
+                showError('Submit task button not found.');
+            }
+            if (window.gapi && window.google) {
+                initGoogleClient();
+            } else {
+                setTimeout(initGoogleClient, 1000);
+            }
+            setInterval(checkDelayedTasks, 60000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "hospital-task-manager",
+  "version": "1.0.0",
+  "description": "Hospital Task Manager - A comprehensive task management system for healthcare facilities",
+  "main": "index.html",
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html dist/ && cp -r assets dist/ 2>/dev/null || true",
+    "dev": "python3 -m http.server 3000",
+    "start": "python3 -m http.server 3000",
+    "preview": "python3 -m http.server 3000 --directory dist"
+  },
+  "keywords": [
+    "hospital",
+    "task-manager",
+    "healthcare",
+    "google-sheets",
+    "whatsapp"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

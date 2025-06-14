@@ -6,148 +6,350 @@
     <title>Hospital Task Manager</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            background-color: #f4f4f4;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         .container {
             background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
         }
-        h1, h2 {
+        h1 {
             text-align: center;
-            color: #333;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 30px;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
         }
         select, textarea, input[type="text"], input[type="datetime-local"] {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        select:focus, textarea:focus, input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
         button {
-            padding: 10px 15px;
-            background: #28a745;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
             border: none;
-            border-radius: 3px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
         }
         button:hover {
-            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+        .btn-success:hover {
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+        .btn-warning:hover {
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
         }
         .dashboard {
-            margin-top: 20px;
+            margin-top: 30px;
         }
         .task {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .task:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .task.delayed {
-            background: #f8d7da;
+            background: #ffeaa7;
+            border-left-color: #e17055;
         }
         .task.completed {
-            background: #d4edda;
+            background: #d1f2eb;
+            border-left-color: #00b894;
+        }
+        .task.in-progress {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
         }
         .hidden {
             display: none;
         }
-        #loading, #error {
+        #loading {
             text-align: center;
-            padding: 20px;
+            padding: 40px;
+            font-size: 18px;
+            color: #3498db;
         }
         #error {
-            color: #dc3545;
+            text-align: center;
+            padding: 20px;
+            color: #e74c3c;
+            background: #fdf2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            margin: 20px 0;
         }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .task-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .task-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .priority-high {
+            border-left-color: #e74c3c !important;
+        }
+        .priority-medium {
+            border-left-color: #f39c12 !important;
+        }
+        .priority-low {
+            border-left-color: #27ae60 !important;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+        .config-input {
+            margin-bottom: 15px;
+        }
+        .config-input input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-assigned { background: #e3f2fd; color: #1976d2; }
+        .status-in-progress { background: #fff3e0; color: #f57c00; }
+        .status-delayed { background: #ffebee; color: #d32f2f; }
+        .status-completed { background: #e8f5e8; color: #388e3c; }
     </style>
-    <!-- Google API Client Library -->
-    <script src="https://apis.google.com/js/api.js" onerror="handleScriptError('Google API')"></script>
-    <!-- Google Sign-In -->
-    <script src="https://accounts.google.com/gsi/client" onerror="handleScriptError('Google Sign-In')"></script>
-    <!-- JWT Decode -->
-    <script src="https://unpkg.com/jwt-decode@3.1.2/build/jwt-decode.min.js" onerror="handleScriptError('JWT Decode')"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" onerror="handleScriptError('Chart.js')"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Hospital Task Manager</h1>
-        <div id="loading" class="hidden">Loading...</div>
-        <div id="error" class="hidden"></div>
-        <div id="loginSection">
-            <button id="googleSignIn">Sign in with Google</button>
+        <h1>🏥 Hospital Task Manager</h1>
+        
+        <div id="loading" class="hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
         </div>
+        
+        <div id="error" class="hidden"></div>
+        
+        <div id="configSection" class="config-section">
+            <h2>⚙️ Configuration</h2>
+            <p>Please configure your Google Sheets and Twilio settings:</p>
+            <div class="config-input">
+                <label for="sheetId">Google Sheet ID:</label>
+                <input type="text" id="sheetId" placeholder="Enter your Google Sheet ID">
+            </div>
+            <div class="config-input">
+                <label for="clientId">Google OAuth Client ID:</label>
+                <input type="text" id="clientId" placeholder="Enter your Google OAuth Client ID">
+            </div>
+            <div class="config-input">
+                <label for="twilioUrl">Twilio Webhook URL (optional):</label>
+                <input type="text" id="twilioUrl" placeholder="Enter your Twilio webhook URL">
+            </div>
+            <button onclick="saveConfig()">Save Configuration</button>
+        </div>
+        
+        <div id="loginSection" class="hidden">
+            <div style="text-align: center; padding: 40px;">
+                <h2>Welcome! Please sign in to continue</h2>
+                <div id="googleSignIn"></div>
+            </div>
+        </div>
+        
         <div id="taskSection" class="hidden">
-            <h2>Add Task</h2>
-            <div class="form-group">
-                <label for="assigner">Assigner</label>
-                <select id="assigner">
-                    <option value="">Select Assigner</option>
-                    <option value="Founder1">Founder 1</option>
-                    <option value="Founder2">Founder 2</option>
-                    <option value="UnitHead">Unit Head</option>
-                    <option value="Doctor1">Doctor 1</option>
-                    <option value="MrsNischala">Mrs. Nischala (Operations Manager)</option>
-                </select>
+            <h2>➕ Add New Task</h2>
+            <form id="taskForm">
+                <div class="form-group">
+                    <label for="assigner">Assigner *</label>
+                    <select id="assigner" required>
+                        <option value="">Select Assigner</option>
+                        <option value="Founder1">Founder 1</option>
+                        <option value="Founder2">Founder 2</option>
+                        <option value="UnitHead">Unit Head</option>
+                        <option value="Doctor1">Doctor 1</option>
+                        <option value="MrsNischala">Mrs. Nischala (Operations Manager)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="assignee">Assignee *</label>
+                    <select id="assignee" required>
+                        <option value="">Select Assignee</option>
+                        <option value="Doctor1">Doctor 1</option>
+                        <option value="Doctor2">Doctor 2</option>
+                        <option value="Nurse1">Nurse 1</option>
+                        <option value="MrsNischala">Mrs. Nischala</option>
+                        <option value="Staff1">Staff 1</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="description">Task Description *</label>
+                    <textarea id="description" rows="4" placeholder="Enter detailed task description..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="eta">Expected Completion Time *</label>
+                    <input type="datetime-local" id="eta" required>
+                </div>
+                <div class="form-group">
+                    <label for="priority">Priority *</label>
+                    <select id="priority" required>
+                        <option value="">Select Priority</option>
+                        <option value="High">🔴 High</option>
+                        <option value="Medium">🟡 Medium</option>
+                        <option value="Low">🟢 Low</option>
+                    </select>
+                </div>
+                <button type="submit" id="submitTask">Create Task</button>
+            </form>
+            
+            <div class="dashboard">
+                <h2>📊 Task Dashboard</h2>
+                <div class="chart-container">
+                    <canvas id="taskChart"></canvas>
+                </div>
+                <div id="taskList"></div>
             </div>
-            <div class="form-group">
-                <label for="assignee">Assignee</label>
-                <select id="assignee">
-                    <option value="">Select Assignee</option>
-                    <option value="Doctor1">Doctor 1</option>
-                    <option value="Doctor2">Doctor 2</option>
-                    <option value="Nurse1">Nurse 1</option>
-                    <option value="MrsNischala">Mrs. Nischala</option>
-                    <option value="Staff1">Staff 1</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="description">Task Description</label>
-                <textarea id="description" rows="5" placeholder="Enter task details..."></textarea>
-            </div>
-            <div class="form-group">
-                <label for="eta">ETA</label>
-                <input type="datetime-local" id="eta">
-            </div>
-            <div class="form-group">
-                <label for="priority">Priority</label>
-                <select id="priority">
-                    <option value="">Select Priority</option>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                </select>
-            </div>
-            <button id="submitTask">Submit Task</button>
-            <h2>Dashboard</h2>
-            <canvas id="taskChart" style="max-height: 300px;"></canvas>
-            <div id="dashboard"></div>
         </div>
     </div>
 
+    <!-- External Scripts -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://unpkg.com/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+
     <script>
-        // Define handleScriptError first to ensure availability
-        function handleScriptError(scriptName) {
-            showError(`Failed to load ${scriptName} script. Please check your network or try again later.`);
+        // Global variables
+        let userEmail = '';
+        let SHEET_ID = '';
+        let CLIENT_ID = '';
+        let TWILIO_URL = '';
+        let currentChart = null;
+
+        // Configuration management
+        function saveConfig() {
+            SHEET_ID = document.getElementById('sheetId').value.trim();
+            CLIENT_ID = document.getElementById('clientId').value.trim();
+            TWILIO_URL = document.getElementById('twilioUrl').value.trim();
+
+            if (!SHEET_ID || !CLIENT_ID) {
+                showError('Please provide both Google Sheet ID and Client ID');
+                return;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('hospitalTaskManager_config', JSON.stringify({
+                SHEET_ID,
+                CLIENT_ID,
+                TWILIO_URL
+            }));
+
+            document.getElementById('configSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+            
+            initGoogleClient();
         }
 
-        let userEmail = '';
-        // Replace these placeholders with your actual credentials
-        const SHEET_ID = 'YOUR_SHEET_ID'; // Google Sheet ID
-        const TWILIO_URL = 'YOUR_TWILIO_ENDPOINT'; // Twilio webhook URL
-        const CLIENT_ID = 'YOUR_CLIENT_ID'; // Google OAuth Client ID
+        function loadConfig() {
+            const saved = localStorage.getItem('hospitalTaskManager_config');
+            if (saved) {
+                const config = JSON.parse(saved);
+                SHEET_ID = config.SHEET_ID;
+                CLIENT_ID = config.CLIENT_ID;
+                TWILIO_URL = config.TWILIO_URL || '';
+                
+                document.getElementById('sheetId').value = SHEET_ID;
+                document.getElementById('clientId').value = CLIENT_ID;
+                document.getElementById('twilioUrl').value = TWILIO_URL;
+                
+                if (SHEET_ID && CLIENT_ID) {
+                    document.getElementById('configSection').classList.add('hidden');
+                    document.getElementById('loginSection').classList.remove('hidden');
+                    initGoogleClient();
+                }
+            }
+        }
 
-        // Show/hide loading indicator
+        // Utility functions
         function showLoading(show) {
             const loadingDiv = document.getElementById('loading');
             if (loadingDiv) {
@@ -155,24 +357,54 @@
             }
         }
 
-        // Show error message
         function showError(message) {
             const errorDiv = document.getElementById('error');
             if (errorDiv) {
                 errorDiv.textContent = message;
                 errorDiv.classList.remove('hidden');
+                setTimeout(() => {
+                    errorDiv.classList.add('hidden');
+                }, 5000);
             }
             console.error(message);
         }
 
-        // Initialize Google APIs
+        function showSuccess(message) {
+            // Create temporary success message
+            const successDiv = document.createElement('div');
+            successDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #27ae60;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 1000;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            `;
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                document.body.removeChild(successDiv);
+            }, 3000);
+        }
+
+        // Google API initialization
         function initGoogleClient() {
             if (!window.gapi || !window.google?.accounts?.id) {
-                showError('Google API or Sign-In script not loaded. Retrying...');
                 setTimeout(initGoogleClient, 1000);
                 return;
             }
+
+            if (!CLIENT_ID) {
+                showError('Client ID not configured');
+                return;
+            }
+
             showLoading(true);
+            
             gapi.load('client:auth2', () => {
                 gapi.client.init({
                     clientId: CLIENT_ID,
@@ -183,54 +415,67 @@
                         client_id: CLIENT_ID,
                         callback: handleCredentialResponse
                     });
+                    
                     const signInButton = document.getElementById('googleSignIn');
                     if (signInButton) {
-                        google.accounts.id.renderButton(signInButton, { theme: 'outline', size: 'large' });
-                    } else {
-                        showError('Sign-in button not found.');
+                        google.accounts.id.renderButton(signInButton, { 
+                            theme: 'outline', 
+                            size: 'large',
+                            text: 'signin_with',
+                            shape: 'rectangular'
+                        });
                     }
                     showLoading(false);
-                    loadTasks();
                 }).catch(error => {
                     console.error('Google API init failed:', error);
-                    showError('Failed to initialize Google APIs. Ensure CLIENT_ID is correct and authorized.');
+                    showError('Failed to initialize Google APIs. Please check your Client ID.');
                     showLoading(false);
                 });
             });
         }
 
-        // Handle Google Sign-In response
+        // Handle Google Sign-In
         function handleCredentialResponse(response) {
             if (!window.jwt_decode) {
                 showError('JWT decode library not loaded.');
                 return;
             }
+            
             try {
                 const profile = jwt_decode(response.credential);
                 userEmail = profile.email;
+                
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('taskSection').classList.remove('hidden');
+                
+                showSuccess(`Welcome, ${profile.name}!`);
+                loadTasks();
             } catch (error) {
                 console.error('JWT decode failed:', error);
                 showError('Failed to process sign-in. Please try again.');
             }
         }
 
-        // Add task
-        function addTask() {
-            const assigner = document.getElementById('assigner')?.value;
-            const assignee = document.getElementById('assignee')?.value;
-            const description = document.getElementById('description')?.value;
-            const eta = document.getElementById('eta')?.value;
-            const priority = document.getElementById('priority')?.value;
+        // Task management
+        function addTask(event) {
+            event.preventDefault();
+            
+            const assigner = document.getElementById('assigner').value;
+            const assignee = document.getElementById('assignee').value;
+            const description = document.getElementById('description').value;
+            const eta = document.getElementById('eta').value;
+            const priority = document.getElementById('priority').value;
 
             if (!assigner || !assignee || !description || !eta || !priority) {
-                alert('Please fill all fields');
+                showError('Please fill all required fields');
                 return;
             }
 
-            if (new Date(eta) <= new Date()) {
-                alert('ETA must be in the future');
+            const etaDate = new Date(eta);
+            const now = new Date();
+            
+            if (etaDate <= now) {
+                showError('Expected completion time must be in the future');
                 return;
             }
 
@@ -247,162 +492,220 @@
             };
 
             showLoading(true);
-            if (!gapi.client.sheets) {
+            
+            if (!gapi.client?.sheets) {
                 showError('Google Sheets API not loaded.');
                 showLoading(false);
                 return;
             }
+
             gapi.client.sheets.spreadsheets.values.append({
                 spreadsheetId: SHEET_ID,
                 range: 'Sheet1!A1',
                 valueInputOption: 'RAW',
                 resource: {
-                    values: [[task.id, task.assigner, task.assignee, task.description, task.eta, task.priority, task.status, task.createdAt, '']]
+                    values: [[
+                        task.id, 
+                        task.assigner, 
+                        task.assignee, 
+                        task.description, 
+                        task.eta, 
+                        task.priority, 
+                        task.status, 
+                        task.createdAt, 
+                        ''
+                    ]]
                 }
             }).then(() => {
                 sendWhatsAppNotification(task);
                 loadTasks();
-                document.getElementById('description').value = '';
-                document.getElementById('eta').value = '';
-                document.getElementById('priority').value = '';
+                document.getElementById('taskForm').reset();
+                showSuccess('Task created successfully!');
                 showLoading(false);
             }).catch(error => {
                 console.error('Error saving task:', error);
-                showError('Failed to save task. Check SHEET_ID or permissions.');
+                showError('Failed to save task. Please check your Sheet ID and permissions.');
                 showLoading(false);
             });
         }
 
-        // Load tasks from Google Sheets
+        // Load and display tasks
         function loadTasks() {
-            if (!gapi.client.sheets) {
+            if (!gapi.client?.sheets) {
                 showError('Google Sheets API not loaded.');
                 return;
             }
+
             showLoading(true);
+            
             gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: SHEET_ID,
                 range: 'Sheet1!A:I'
             }).then(response => {
                 const tasks = response.result.values || [];
-                const dashboard = document.getElementById('dashboard');
-                if (!dashboard) {
-                    showError('Dashboard element not found.');
+                const taskList = document.getElementById('taskList');
+                
+                if (!taskList) {
+                    showError('Task list element not found.');
                     showLoading(false);
                     return;
                 }
-                dashboard.innerHTML = '';
+
+                taskList.innerHTML = '';
                 const statusCounts = { assigned: 0, 'in-progress': 0, delayed: 0, completed: 0 };
 
-                tasks.slice(1).forEach((task, index) => {
+                // Skip header row
+                const taskRows = tasks.slice(1);
+                
+                taskRows.forEach((task, index) => {
+                    if (task.length < 8) return; // Skip incomplete rows
+                    
                     const [id, assigner, assignee, description, eta, priority, status, createdAt, comments] = task;
-                    if (userEmail === assigner || userEmail === assignee || userEmail === 'admin@example.com') {
+                    
+                    // Only show tasks relevant to current user
+                    if (userEmail === assigner || userEmail === assignee || userEmail.includes('admin')) {
                         statusCounts[status] = (statusCounts[status] || 0) + 1;
+                        
                         const taskDiv = document.createElement('div');
-                        taskDiv.className = `task ${status === 'delayed' ? 'delayed' : status === 'completed' ? 'completed' : ''}`;
+                        taskDiv.className = `task ${status} priority-${priority.toLowerCase()}`;
+                        
+                        const etaDate = new Date(eta);
+                        const isOverdue = etaDate < new Date() && status !== 'completed';
+                        
                         taskDiv.innerHTML = `
-                            <p><strong>Task:</strong> ${description}</p>
-                            <p><strong>Assigned by:</strong> ${assigner} | <strong>To:</strong> ${assignee}</p>
-                            <p><strong>ETA:</strong> ${eta} | <strong>Priority:</strong> ${priority}</p>
-                            <p><strong>Status:</strong> ${status}</p>
-                            <p><strong>Comments:</strong> ${comments || 'None'}</p>
-                            <button onclick="updateTaskStatus('${id}', 'in-progress', prompt('Add comment:'))">Mark In Progress</button>
-                            <button onclick="updateTaskStatus('${id}', 'completed', prompt('Add comment:'))">Mark Completed</button>
+                            <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 15px;">
+                                <h3 style="margin: 0; color: #2c3e50; flex: 1;">${description}</h3>
+                                <span class="status-badge status-${status}">${status.replace('-', ' ')}</span>
+                            </div>
+                            
+                            <div class="task-meta">
+                                <div><strong>👤 Assigned by:</strong> ${assigner}</div>
+                                <div><strong>👥 Assigned to:</strong> ${assignee}</div>
+                                <div><strong>⏰ Due:</strong> ${new Date(eta).toLocaleString()}</div>
+                                <div><strong>🎯 Priority:</strong> ${priority}</div>
+                            </div>
+                            
+                            ${isOverdue ? '<div style="color: #e74c3c; font-weight: bold; margin: 10px 0;">⚠️ OVERDUE</div>' : ''}
+                            
+                            ${comments ? `<div style="margin: 10px 0;"><strong>💬 Comments:</strong> ${formatComments(comments)}</div>` : ''}
+                            
+                            <div class="task-actions">
+                                ${status !== 'completed' ? `
+                                    <button class="btn-warning" onclick="updateTaskStatus('${id}', 'in-progress')">
+                                        🔄 Mark In Progress
+                                    </button>
+                                    <button class="btn-success" onclick="updateTaskStatus('${id}', 'completed')">
+                                        ✅ Mark Completed
+                                    </button>
+                                ` : ''}
+                                <button onclick="addComment('${id}')">💬 Add Comment</button>
+                            </div>
                         `;
-                        dashboard.appendChild(taskDiv);
+                        
+                        taskList.appendChild(taskDiv);
                     }
                 });
 
-                const canvas = document.getElementById('taskChart');
-                if (!canvas || !window.Chart) {
-                    showError('Chart.js or canvas not loaded.');
-                    showLoading(false);
-                    return;
-                }
-                const ctx = canvas.getContext('2d');
-                // Destroy previous chart instance to prevent memory leaks
-                if (canvas.chart) {
-                    canvas.chart.destroy();
-                }
-                canvas.chart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Assigned', 'In Progress', 'Delayed', 'Completed'],
-                        datasets: [{
-                            label: '# of Tasks',
-                            data: [statusCounts.assigned, statusCounts['in-progress'], statusCounts.delayed, statusCounts.completed],
-                            backgroundColor: ['#007bff', '#ffc107', '#dc3545', '#28a745']
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-
+                updateChart(statusCounts);
                 showLoading(false);
             }).catch(error => {
                 console.error('Error loading tasks:', error);
-                showError('Failed to load tasks. Check SHEET_ID or permissions.');
+                showError('Failed to load tasks. Please check your Sheet ID and permissions.');
                 showLoading(false);
             });
         }
 
-        // Send WhatsApp notification
-        function sendWhatsAppNotification(task) {
-            if (!TWILIO_URL.includes('YOUR_TWILIO_ENDPOINT')) {
-                fetch(TWILIO_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        to: 'whatsapp:+91XXXXXXXXXX', // Replace with assignee's number
-                        from: 'whatsapp:+YOUR_TWILIO_NUMBER',
-                        body: `New task assigned by ${task.assigner}: ${task.description}. ETA: ${task.eta}. Priority: ${task.priority}. View: ${window.location.href}`
-                    })
-                }).catch(error => console.error('WhatsApp notification failed:', error));
-            } else {
-                console.warn('Twilio URL not configured. Skipping WhatsApp notification.');
+        // Update task chart
+        function updateChart(statusCounts) {
+            const canvas = document.getElementById('taskChart');
+            if (!canvas || !window.Chart) {
+                return;
             }
+
+            const ctx = canvas.getContext('2d');
+            
+            // Destroy existing chart
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            currentChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Assigned', 'In Progress', 'Delayed', 'Completed'],
+                    datasets: [{
+                        data: [
+                            statusCounts.assigned || 0, 
+                            statusCounts['in-progress'] || 0, 
+                            statusCounts.delayed || 0, 
+                            statusCounts.completed || 0
+                        ],
+                        backgroundColor: ['#3498db', '#f39c12', '#e74c3c', '#27ae60'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         // Update task status
-        function updateTaskStatus(taskId, newStatus, comment = '') {
+        function updateTaskStatus(taskId, newStatus) {
+            const comment = prompt(`Add a comment for this status change (optional):`);
+            
             showLoading(true);
-            if (!gapi.client.sheets) {
-                showError('Google Sheets API not loaded.');
-                showLoading(false);
-                return;
-            }
+            
             gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: SHEET_ID,
                 range: 'Sheet1!A:I'
             }).then(response => {
                 const tasks = response.result.values || [];
-                const rowIndex = tasks.findIndex(row => row[0] === taskId) + 1;
-                if (rowIndex > 0) {
-                    const currentComments = tasks[rowIndex - 1][8] || '';
-                    const updatedComments = comment ? `${currentComments}${currentComments ? ';' : ''}${new Date().toISOString()}:${comment}` : currentComments;
-                    gapi.client.sheets.spreadsheets.values.update({
-                        spreadsheetId: SHEET_ID,
-                        range: `Sheet1!G${rowIndex}:I${rowIndex}`,
-                        valueInputOption: 'RAW',
-                        resource: { values: [[newStatus, tasks[rowIndex - 1][7], updatedComments]] }
-                    }).then(() => {
-                        if (newStatus === 'completed') {
-                            sendWhatsAppNotification({ id: taskId, assigner: tasks[rowIndex - 1][1], description: 'Task completed' });
-                        }
-                        loadTasks();
-                        showLoading(false);
-                    }).catch(error => {
-                        console.error('Error updating task:', error);
-                        showError('Failed to update task. Please try again.');
-                        showLoading(false);
-                    });
-                } else {
+                const rowIndex = tasks.findIndex(row => row[0] === taskId);
+                
+                if (rowIndex === -1) {
                     showError('Task not found.');
                     showLoading(false);
+                    return;
                 }
+
+                const actualRowIndex = rowIndex + 1; // Account for 1-based indexing
+                const currentComments = tasks[rowIndex][8] || '';
+                const timestamp = new Date().toISOString();
+                const newComment = comment ? `${timestamp}: ${comment}` : '';
+                const updatedComments = currentComments ? 
+                    `${currentComments}; ${newComment}` : newComment;
+
+                gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: SHEET_ID,
+                    range: `Sheet1!G${actualRowIndex}:I${actualRowIndex}`,
+                    valueInputOption: 'RAW',
+                    resource: { 
+                        values: [[newStatus, tasks[rowIndex][7], updatedComments]] 
+                    }
+                }).then(() => {
+                    if (newStatus === 'completed') {
+                        sendCompletionNotification(tasks[rowIndex]);
+                    }
+                    loadTasks();
+                    showSuccess(`Task marked as ${newStatus.replace('-', ' ')}!`);
+                    showLoading(false);
+                }).catch(error => {
+                    console.error('Error updating task:', error);
+                    showError('Failed to update task. Please try again.');
+                    showLoading(false);
+                });
             }).catch(error => {
                 console.error('Error fetching tasks for update:', error);
                 showError('Failed to update task. Please try again.');
@@ -410,43 +713,176 @@
             });
         }
 
-        // Check for delayed tasks
-        function checkDelayedTasks() {
-            if (!gapi.client.sheets) return;
+        // Add comment to task
+        function addComment(taskId) {
+            const comment = prompt('Enter your comment:');
+            if (!comment) return;
+
+            showLoading(true);
+            
             gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: SHEET_ID,
                 range: 'Sheet1!A:I'
             }).then(response => {
                 const tasks = response.result.values || [];
+                const rowIndex = tasks.findIndex(row => row[0] === taskId);
+                
+                if (rowIndex === -1) {
+                    showError('Task not found.');
+                    showLoading(false);
+                    return;
+                }
+
+                const actualRowIndex = rowIndex + 1;
+                const currentComments = tasks[rowIndex][8] || '';
+                const timestamp = new Date().toISOString();
+                const newComment = `${timestamp}: ${comment}`;
+                const updatedComments = currentComments ? 
+                    `${currentComments}; ${newComment}` : newComment;
+
+                gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: SHEET_ID,
+                    range: `Sheet1!I${actualRowIndex}`,
+                    valueInputOption: 'RAW',
+                    resource: { values: [[updatedComments]] }
+                }).then(() => {
+                    loadTasks();
+                    showSuccess('Comment added successfully!');
+                    showLoading(false);
+                }).catch(error => {
+                    console.error('Error adding comment:', error);
+                    showError('Failed to add comment. Please try again.');
+                    showLoading(false);
+                });
+            });
+        }
+
+        // Format comments for display
+        function formatComments(comments) {
+            if (!comments) return 'None';
+            
+            return comments.split(';').map(comment => {
+                const trimmed = comment.trim();
+                if (trimmed.includes(':')) {
+                    const [timestamp, ...messageParts] = trimmed.split(':');
+                    const message = messageParts.join(':').trim();
+                    const date = new Date(timestamp);
+                    return `<div style="margin: 5px 0; padding: 5px; background: #f8f9fa; border-radius: 5px;">
+                        <small style="color: #666;">${date.toLocaleString()}</small><br>
+                        ${message}
+                    </div>`;
+                }
+                return `<div style="margin: 5px 0;">${trimmed}</div>`;
+            }).join('');
+        }
+
+        // WhatsApp notifications
+        function sendWhatsAppNotification(task) {
+            if (!TWILIO_URL || TWILIO_URL.includes('YOUR_TWILIO_ENDPOINT')) {
+                console.log('Twilio not configured, skipping WhatsApp notification');
+                return;
+            }
+
+            fetch(TWILIO_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: 'whatsapp:+91XXXXXXXXXX', // Replace with actual number
+                    from: 'whatsapp:+YOUR_TWILIO_NUMBER',
+                    body: `🏥 New task assigned by ${task.assigner}: ${task.description}. Due: ${task.eta}. Priority: ${task.priority}. View: ${window.location.href}`
+                })
+            }).catch(error => {
+                console.error('WhatsApp notification failed:', error);
+            });
+        }
+
+        function sendCompletionNotification(task) {
+            if (!TWILIO_URL || TWILIO_URL.includes('YOUR_TWILIO_ENDPOINT')) {
+                return;
+            }
+
+            fetch(TWILIO_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: 'whatsapp:+91XXXXXXXXXX',
+                    from: 'whatsapp:+YOUR_TWILIO_NUMBER',
+                    body: `✅ Task completed: "${task[3]}" assigned to ${task[2]} has been marked as completed.`
+                })
+            }).catch(error => {
+                console.error('Completion notification failed:', error);
+            });
+        }
+
+        // Check for delayed tasks
+        function checkDelayedTasks() {
+            if (!gapi.client?.sheets) return;
+            
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: SHEET_ID,
+                range: 'Sheet1!A:I'
+            }).then(response => {
+                const tasks = response.result.values || [];
+                const updates = [];
+                
                 tasks.slice(1).forEach((task, index) => {
+                    if (task.length < 7) return;
+                    
                     const [id, , , , eta, , status] = task;
-                    if (status !== 'completed' && new Date(eta) < new Date()) {
-                        gapi.client.sheets.spreadsheets.values.update({
-                            spreadsheetId: SHEET_ID,
-                            range: `Sheet1!G${index + 2}`,
-                            valueInputOption: 'RAW',
-                            resource: { values: [['delayed']] }
+                    const actualRowIndex = index + 2; // Account for header and 1-based indexing
+                    
+                    if (status !== 'completed' && status !== 'delayed' && new Date(eta) < new Date()) {
+                        updates.push({
+                            range: `Sheet1!G${actualRowIndex}`,
+                            values: [['delayed']]
                         });
                     }
                 });
-                loadTasks();
-            }).catch(error => console.error('Error checking delayed tasks:', error));
+
+                if (updates.length > 0) {
+                    gapi.client.sheets.spreadsheets.values.batchUpdate({
+                        spreadsheetId: SHEET_ID,
+                        resource: {
+                            valueInputOption: 'RAW',
+                            data: updates
+                        }
+                    }).then(() => {
+                        loadTasks();
+                    }).catch(error => {
+                        console.error('Error updating delayed tasks:', error);
+                    });
+                }
+            }).catch(error => {
+                console.error('Error checking delayed tasks:', error);
+            });
         }
 
-        // Initialize app
+        // Initialize application
         document.addEventListener('DOMContentLoaded', () => {
-            const submitTaskButton = document.getElementById('submitTask');
-            if (submitTaskButton) {
-                submitTaskButton.addEventListener('click', addTask);
-            } else {
-                showError('Submit task button not found.');
+            loadConfig();
+            
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                taskForm.addEventListener('submit', addTask);
             }
-            if (window.gapi && window.google) {
-                initGoogleClient();
-            } else {
-                setTimeout(initGoogleClient, 1000);
+
+            // Set minimum datetime to current time
+            const etaInput = document.getElementById('eta');
+            if (etaInput) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                etaInput.min = now.toISOString().slice(0, 16);
             }
-            setInterval(checkDelayedTasks, 60000);
+
+            // Check for delayed tasks every 5 minutes
+            setInterval(checkDelayedTasks, 5 * 60 * 1000);
+        });
+
+        // Handle script loading errors
+        window.addEventListener('error', (event) => {
+            if (event.target.tagName === 'SCRIPT') {
+                showError(`Failed to load external script: ${event.target.src}`);
+            }
         });
     </script>
 </body>
